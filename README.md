@@ -48,17 +48,16 @@ div {
 </style>
 ```
 
-Install:
+Then:
 
 ``` bash
-npm install -g @vue/dev-server
+npm i @vue/dev-server
+npx vue-dev-server
 ```
-
-Then in that directory, run `vue-dev-server` and see it working. There's no "build" process - compilation happens on the fly.
 
 ## How It Works
 
-- Imports are requested by the browser as native ES module imports;
+- Imports are requested by the browser as native ES module imports - there's no bundling.
 
 - The server intercepts requests to `*.vue` files, compiles them on the fly, and sends them back as JavaScript.
 

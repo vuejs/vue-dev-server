@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 const fs = require('fs')
 const path = require('path')
 const readFile = require('util').promisify(fs.readFile)
@@ -25,10 +27,9 @@ function transformModuleImports(code) {
 }
 
 async function loadPkg(pkg) {
-  const pkgPath = path.resolve(__dirname, 'node_modules', pkg)
-  let filepath
   if (pkg === 'vue') {
-    filepath = path.join(pkgPath, 'dist/vue.esm.browser.js')
+    const dir = path.dirname(require.resolve('vue'))
+    const filepath = path.join(dir, 'vue.esm.browser.js')
     return readFile(filepath)
   } else {
     // TODO
