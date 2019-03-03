@@ -9,22 +9,16 @@ In an directory, create an `index.html`:
 ``` html
 <div id="app"></div>
 <script type="module">
-  import './main.js'
-</script>
-```
-
-In `main.js`:
-
-``` js
-import Vue from 'vue'
-import App from './test.vue'
+import Vue from 'https://unpkg.com/vue/dist/vue.esm.browser.js'
+import App from './App.vue'
 
 new Vue({
   render: h => h(App)
 }).$mount('#app')
+</script>
 ```
 
-In `test.vue`:
+In `App.vue`:
 
 ``` vue
 <template>
