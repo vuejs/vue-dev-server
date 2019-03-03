@@ -1,5 +1,6 @@
-const fs = require('fs').promises
+const fs = require('fs')
 const path = require('path')
+const readFile = require('util').promisify(fs.readFile)
 const express = require('express')
 const parseUrl = require('parseurl')
 const vueCompiler = require('@vue/component-compiler')
@@ -7,7 +8,7 @@ const recast = require('recast')
 const isPkg = require('validate-npm-package-name')
 
 const app = express()
-const root = path.resolve(__dirname, 'test')
+const root = process.cwd()
 
 function transformModuleImports(code) {
   const ast = recast.parse(code)
@@ -28,7 +29,7 @@ async function loadPkg(pkg) {
   let filepath
   if (pkg === 'vue') {
     filepath = path.join(pkgPath, 'dist/vue.esm.browser.js')
-    return fs.readFile(filepath)
+    return readFile(filepath)
   } else {
     // TODO
     // check if the package has a browser es module that can be used
@@ -45,16 +46,16 @@ const vueMiddleware = root => {
     const filepath = path.resolve(root, pathname.replace(/^\//, ''))
     return {
       filepath,
-      source: await fs.readFile(filepath, 'utf-8')
+      source: await readFile(filepath, 'utf-8')
     }
   }
 
   return async (req, res, next) => {
+    // TODO caching
     if (req.path.endsWith('.vue')) {
       const { filepath, source } = await read(req)
       const descriptorResult = compiler.compileToDescriptor(filepath, source)
       const assembledResult = vueCompiler.assemble(compiler, filepath, descriptorResult)
-
       res.setHeader('Content-Type', 'application/javascript')
       res.end(assembledResult.code)
     } else if (req.path.endsWith('.js')) {
@@ -78,4 +79,6 @@ app.use(vueMiddleware(root))
 
 app.use(express.static(root))
 
-app.listen(3000)
+app.listen(3000, () => {
+  console.log('server running at http://localhost:3000')
+})

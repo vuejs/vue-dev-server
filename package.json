@@ -1,12 +1,15 @@
 {
-  "name": "vue-dev-server",
-  "version": "1.0.0",
-  "description": "",
+  "name": "@vue/dev-server",
+  "version": "0.1.0",
+  "description": "Instant dev server for Vue single file components",
   "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+  "bin": {
+    "vue-dev-server": "index.js"
   },
-  "author": "",
+  "scripts": {
+    "test": "cd test && node ../"
+  },
+  "author": "Evan You",
   "license": "MIT",
   "dependencies": {
     "@vue/component-compiler": "^3.6.0",

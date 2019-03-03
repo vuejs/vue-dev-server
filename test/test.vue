@@ -6,7 +6,7 @@
 export default {
   data() {
     return {
-      msg: 'hi'
+      msg: 'Hi from the Vue file!'
     }
   }
 }
