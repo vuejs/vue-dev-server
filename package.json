@@ -1,6 +1,6 @@
 {
   "name": "@vue/dev-server",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Instant dev server for Vue single file components",
   "main": "index.js",
   "bin": {
