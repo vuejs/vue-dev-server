@@ -88,9 +88,26 @@ const vueMiddleware = root => {
     if (req.path.endsWith('.vue')) {
       const { filepath, source } = await read(req)
       const descriptorResult = compiler.compileToDescriptor(filepath, source)
-      const assembledResult = vueCompiler.assemble(compiler, filepath, descriptorResult)
+      let { script } = descriptorResult
+
+      if (source.indexOf('lang="ts"') >= 0 || source.indexOf('lang="typescript"') >= 0) { // Transpile only TS scripts
+        const _script = await compileTypeScript(script.code, tsConfig)
+        script = {
+          code: _script.outputText,
+          map: _script.sourceMapText
+        }
+      }
+
+      const assembledResult = vueCompiler.assemble(compiler, filepath, {
+        ...descriptorResult,
+        script
+      })
+
+      // transform import statements
+      const transformed = transformModuleImports(assembledResult.code)
+
       res.setHeader('Content-Type', 'application/javascript')
-      res.end(assembledResult.code)
+      res.end(transformed)
     } else if (req.path.endsWith('.js')) {
       const { filepath, source } = await read(req)
       // transform import statements

@@ -2,14 +2,16 @@
   <div>{{ msg }}</div>
 </template>
 
-<script>
-export default {
-  data() {
+<script lang="ts">
+import Vue from 'vue'
+
+export default Vue.extend({
+  data (): object {
     return {
       msg: 'Hi from the Vue file!'
     }
   }
-}
+})
 </script>
 
 <style scoped>
