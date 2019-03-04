@@ -1,20 +1,14 @@
-#!/usr/bin/env node
-
-const express = require('express')
 const vueCompiler = require('@vue/component-compiler')
 const { transformModuleImports } = require('./transformModuleImports')
 const { loadPkg } = require("./loadPkg")
 const { readSource } = require('./readSource')
 
-const app = express()
-const root = process.cwd();
-
 const vueMiddleware = root => {
   const compiler = vueCompiler.createDefaultCompiler()
 
   function send(res, source, mime) {
-    res.setHeader('Content-Type', mime);
-    res.end(source);
+    res.setHeader('Content-Type', mime)
+    res.end(source)
   }
 
   return async (req, res, next) => {
@@ -41,10 +35,4 @@ const vueMiddleware = root => {
   }
 }
 
-app.use(vueMiddleware(root))
-
-app.use(express.static(root))
-
-app.listen(3000, () => {
-  console.log('server running at http://localhost:3000')
-})
+exports.vueMiddleware = vueMiddleware

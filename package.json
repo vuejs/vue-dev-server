@@ -2,12 +2,12 @@
   "name": "@vue/dev-server",
   "version": "0.1.1",
   "description": "Instant dev server for Vue single file components",
-  "main": "index.js",
+  "main": "middleware.js",
   "bin": {
-    "vue-dev-server": "index.js"
+    "vue-dev-server": "./bin/vue-dev-server.js"
   },
   "scripts": {
-    "test": "cd test && node ../"
+    "test": "cd test && node ../bin/vue-dev-server.js"
   },
   "author": "Evan You",
   "license": "MIT",
