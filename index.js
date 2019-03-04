@@ -3,14 +3,10 @@
 const fs = require('fs')
 const path = require('path')
 const readFile = require('util').promisify(fs.readFile)
-const express = require('express')
 const parseUrl = require('parseurl')
 const vueCompiler = require('@vue/component-compiler')
 const recast = require('recast')
 const isPkg = require('validate-npm-package-name')
-
-const app = express()
-const root = process.cwd()
 
 function transformModuleImports(code) {
   const ast = recast.parse(code)
@@ -76,10 +72,19 @@ const vueMiddleware = root => {
   }
 }
 
-app.use(vueMiddleware(root))
+exports.default = vueMiddleware
 
-app.use(express.static(root))
+if (require.main === module) { // Set up a server only when running standalone
+  const express = require('express')
 
-app.listen(3000, () => {
-  console.log('server running at http://localhost:3000')
-})
+  const app = express()
+  const root = process.cwd()
+
+  app.use(vueMiddleware(root))
+
+  app.use(express.static(root))
+
+  app.listen(3000, () => {
+    console.log('server running at http://localhost:3000')
+  })
+}
