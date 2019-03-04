@@ -7,7 +7,8 @@
     "vue-dev-server": "index.js"
   },
   "scripts": {
-    "test": "cd test && node ../"
+    "test": "cd test && node ../",
+    "commit": "npx git-cz"
   },
   "author": "Evan You",
   "license": "MIT",
@@ -18,5 +19,8 @@
     "validate-npm-package-name": "^3.0.0",
     "vue": "^2.6.8",
     "vue-template-compiler": "^2.6.8"
+  },
+  "devDependencies": {
+    "commitizen": "^3.0.7"
   }
 }
