@@ -90,7 +90,7 @@ const vueMiddleware = root => {
       const descriptorResult = compiler.compileToDescriptor(filepath, source)
       let { script } = descriptorResult
 
-      if (source.includes('lang="ts"') || source.includes('lang="typescript"')) { // Transpile only TS scripts
+      if (source.includes('lang="ts"') || source.includes('lang="typescript"') || source.includes('lang=\'ts\'') || source.includes('lang=\'typescript\'')) { // Transpile only TS scripts
         const _script = await compileTypeScript(script.code, tsConfig)
         script = {
           code: _script.outputText,
