@@ -8,9 +8,41 @@ const parseUrl = require('parseurl')
 const vueCompiler = require('@vue/component-compiler')
 const recast = require('recast')
 const isPkg = require('validate-npm-package-name')
+const ts = require('typescript')
+const tsConfig = require('tsconfig').loadSync(__dirname).config // Find tsconfig.json and load its options. If there isn't any, defaults will be used
 
 const app = express()
 const root = process.cwd()
+
+async function compileTypeScript (source, options = {}) {
+  const result = ts.transpileModule(source, {
+    compilerOptions: {
+      module: ts.ModuleKind.ES2015, // Build as native ESM by default
+      ...options
+    }
+  })
+
+  result.diagnostics.forEach(diagnostic => { // Process messages from TS compiler
+    if (diagnostic.file) {
+      let { line, character } = diagnostic.file.getLineAndCharacterOfPosition(
+        diagnostic.start
+      )
+      let message = ts.flattenDiagnosticMessageText(
+        diagnostic.messageText,
+        "\n"
+      )
+      console.log(
+        `${diagnostic.file.fileName} (${line + 1},${character + 1}): ${message}`
+      )
+    } else {
+      console.log(
+        `${ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n")}`
+      )
+    }
+  })
+
+  return result
+}
 
 function transformModuleImports(code) {
   const ast = recast.parse(code)
@@ -63,6 +95,17 @@ const vueMiddleware = root => {
       const { filepath, source } = await read(req)
       // transform import statements
       const transformed = transformModuleImports(source)
+      res.setHeader('Content-Type', 'application/javascript')
+      res.end(transformed)
+    } else if (req.path.endsWith('.ts')) {
+      const { filepath, source } = await read(req)
+
+      // compile TS => JS
+      const result = await compileTypeScript(source, tsConfig)
+
+      // transform import statements
+      const transformed = transformModuleImports(result.outputText)
+
       res.setHeader('Content-Type', 'application/javascript')
       res.end(transformed)
     } else if (req.path.startsWith('/__modules/')) {
