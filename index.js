@@ -8,6 +8,12 @@ const parseUrl = require('parseurl')
 const vueCompiler = require('@vue/component-compiler')
 const recast = require('recast')
 const isPkg = require('validate-npm-package-name')
+const argv = require('yargs')
+  .usage('Usage: $0 --port 3000')
+  .demandOption(['port'])
+  .default('port', 3000)
+  .alias('p', 'port')
+  .argv
 
 const app = express()
 const root = process.cwd()
@@ -80,6 +86,6 @@ app.use(vueMiddleware(root))
 
 app.use(express.static(root))
 
-app.listen(3000, () => {
-  console.log('server running at http://localhost:3000')
+app.listen(argv.port, () => {
+  console.log(`server running at http://localhost:${argv.port}`)
 })

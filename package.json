@@ -17,6 +17,7 @@
     "recast": "^0.17.3",
     "validate-npm-package-name": "^3.0.0",
     "vue": "^2.6.8",
-    "vue-template-compiler": "^2.6.8"
+    "vue-template-compiler": "^2.6.8",
+    "yargs": "^13.2.1"
   }
 }
