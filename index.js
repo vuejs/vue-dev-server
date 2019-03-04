@@ -51,12 +51,41 @@ const vueMiddleware = root => {
     }
   }
 
+
+  function injectSourceMapsToScript (script) {
+    const map = Base64.toBase64(
+      JSON.stringify(script.map)
+    )
+
+    return {
+      ...script,
+      code: `//# sourceMappingURL=data:application/json;base64,${map}\n` + script.code
+    }
+  }
+
+  function injectSourceMapsToStyles (styles) {
+    return styles.map(s => {
+      const map = Base64.toBase64(
+        JSON.stringify(s.map)
+      )
+
+      return {
+        ...s,
+        code: `/*# sourceMappingURL=data:application/json;base64,${map}*/\n` + s.code
+      }
+    })
+  }
+
   return async (req, res, next) => {
     // TODO caching
     if (req.path.endsWith('.vue')) {
       const { filepath, source } = await read(req)
       const descriptorResult = compiler.compileToDescriptor(filepath, source)
-      const assembledResult = vueCompiler.assemble(compiler, filepath, descriptorResult)
+      const assembledResult = vueCompiler.assemble(compiler, filepath, {
+        ...descriptorResult,
+        styles: injectSourceMapsToStyles(descriptorResult.styles),
+        script: injectSourceMapsToScript(descriptorResult.script)
+      })
       res.setHeader('Content-Type', 'application/javascript')
       res.end(assembledResult.code)
     } else if (req.path.endsWith('.js')) {
