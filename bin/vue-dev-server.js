@@ -6,7 +6,7 @@ const { vueMiddleware } = require('../middleware')
 const app = express()
 const root = process.cwd();
 
-app.use(vueMiddleware(root))
+app.use(vueMiddleware())
 
 app.use(express.static(root))
 
