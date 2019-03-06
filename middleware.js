@@ -1,4 +1,8 @@
 const vueCompiler = require('@vue/component-compiler')
+const fs = require('fs')
+const stat = require('util').promisify(fs.stat)
+const root = process.cwd()
+const path = require('path')
 const parseUrl = require('parseurl')
 const { transformModuleImports } = require('./transformModuleImports')
 const { loadPkg } = require('./loadPkg')
@@ -10,6 +14,7 @@ const defaultOptions = {
 
 const vueMiddleware = (options = defaultOptions) => {
   let cache
+  let time = {}
   if (options.cache) {
     const LRU = require('lru-cache')
 
@@ -27,82 +32,70 @@ const vueMiddleware = (options = defaultOptions) => {
     res.end(source)
   }
 
-  function tryCache (key) {
-    return cache.get(key)
+  async function tryCache (key, upd = true) {
+    const data = cache.get(key)
+
+    if (upd) {
+      const cacheUpd = time[key]
+      const fileUpd = (await stat(path.resolve(root, key.replace(/^\//, '')))).mtime.getTime()
+      if (cacheUpd < fileUpd) return null
+    }
+
+    return data
   }
 
-  function cacheData (key, data) {
+  function cacheData (key, data, upd) {
     const old = cache.peek(key)
 
     if (old != data) {
       cache.set(key, data)
+      if (upd) time[key] = upd
       return true
     } else return false
   }
 
   async function bundleSFC (req) {
-    const { filepath, source } = await readSource(req)
+    const { filepath, source, upd } = await readSource(req)
     const descriptorResult = compiler.compileToDescriptor(filepath, source)
-    return vueCompiler.assemble(compiler, filepath, descriptorResult)
+    return { ...vueCompiler.assemble(compiler, filepath, descriptorResult), upd }
   }
 
   return async (req, res, next) => {
     if (req.path.endsWith('.vue')) {
       const key = parseUrl(req).pathname
-      let out = tryCache(key)
-      let cached = false
+      let out = await tryCache(key)
 
       if (!out) {
         // Bundle Single-File Component
-        out = (await bundleSFC(req)).code
-        cacheData(key, out)
-        cached = true
+        const result = await bundleSFC(req)
+        out = result.code
+        cacheData(key, out, result.upd)
       }
 
       send(res, out, 'application/javascript')
-
-      // Bundle Single-File Component
-      out = (await bundleSFC(req)).code
-      if (!cached && cacheData(key, out)) {
-        console.log(`${key} updated. Please reload the page`)
-      }
     } else if (req.path.endsWith('.js')) {
       const key = parseUrl(req).pathname
-      let out = tryCache(key)
-      let cached = false
+      let out = await tryCache(key)
 
       if (!out) {
         // transform import statements
-        out = transformModuleImports((await readSource(req)).source)
-        cacheData(key, out)
-        cached = true
+        const result = await readSource(req)
+        out = transformModuleImports(result.source)
+        cacheData(key, out, result.upd)
       }
 
       send(res, out, 'application/javascript')
-
-      // transform import statements
-      out = transformModuleImports((await readSource(req)).source)
-      if (!cached && cacheData(key, out)) {
-        console.log(`${key} updated. Please reload the page`)
-      }
     } else if (req.path.startsWith('/__modules/')) {
       const key = parseUrl(req).pathname
       const pkg = req.path.replace(/^\/__modules\//, '')
-      let cached = false
 
-      let out = tryCache(key)
+      let out = await tryCache(key, false) // Do not outdate modules
       if (!out) {
         out = (await loadPkg(pkg)).toString()
-        cacheData(key, out)
-        cached = true
+        cacheData(key, out, false) // Do not outdate modules
       }
 
       send(res, out, 'application/javascript')
-
-      out = (await loadPkg(pkg)).toString()
-      if (!cached && cacheData(key, out)) {
-        console.log(`${key} updated. Please reload the page`)
-      }
     } else {
       next()
     }
