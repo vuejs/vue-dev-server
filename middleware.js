@@ -19,9 +19,8 @@ const vueMiddleware = (options = defaultOptions) => {
     const LRU = require('lru-cache')
 
     cache = new LRU({
-      max: 100,
-      length: function (n, key) { return n * 2 + key.length },
-      maxAge: 1000 * 60 * 60
+      max: 500,
+      length: function (n, key) { return n * 2 + key.length }
     })
   }
 
