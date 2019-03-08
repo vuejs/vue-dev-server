@@ -11,7 +11,7 @@ async function readSource(req) {
   return {
     filepath,
     source: await readFile(filepath, 'utf-8'),
-    upd: (await stat(filepath)).mtime.getTime()
+    updateTime: (await stat(filepath)).mtime.getTime()
   }
 }
 
