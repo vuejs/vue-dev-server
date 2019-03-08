@@ -31,28 +31,30 @@ const vueMiddleware = (options = defaultOptions) => {
     res.end(source)
   }
 
-  function injectSourceMapsToScript (script) {
+  function injectSourceMapToBlock (block, lang) {
     const map = Base64.toBase64(
-      JSON.stringify(script.map)
+      JSON.stringify(block.map)
     )
+    let mapInject
+
+    switch (lang) {
+      case 'js': mapInject = `//# sourceMappingURL=data:application/json;base64,${map}\n`; break;
+      case 'css': mapInject = `/*# sourceMappingURL=data:application/json;base64,${map}*/\n`; break;
+      default: break;
+    }
 
     return {
-      ...script,
-      code: `//# sourceMappingURL=data:application/json;base64,${map}\n` + script.code
+      ...block,
+      code: mapInject + block.code
     }
   }
 
-  function injectSourceMapsToStyles (styles) {
-    return styles.map(s => {
-      const map = Base64.toBase64(
-        JSON.stringify(s.map)
-      )
+  function injectSourceMapToScript (script) {
+    return injectSourceMapToBlock(script, 'js')
+  }
 
-      return {
-        ...s,
-        code: `/*# sourceMappingURL=data:application/json;base64,${map}*/\n` + s.code
-      }
-    })
+  function injectSourceMapsToStyles (styles) {
+    return styles.map(style => injectSourceMapToBlock(style, 'css'))
   }
   
   async function tryCache (key, checkUpdateTime = true) {
@@ -82,7 +84,7 @@ const vueMiddleware = (options = defaultOptions) => {
     const descriptorResult = compiler.compileToDescriptor(filepath, source)
     const assembledResult = vueCompiler.assemble(compiler, filepath, {
       ...descriptorResult,
-      script: injectSourceMapsToScript(descriptorResult.script),
+      script: injectSourceMapToScript(descriptorResult.script),
       styles: injectSourceMapsToStyles(descriptorResult.styles)
     })
     return { ...assembledResult, updateTime }
