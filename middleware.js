@@ -31,32 +31,32 @@ const vueMiddleware = (options = defaultOptions) => {
     res.end(source)
   }
 
-  async function tryCache (key, upd = true) {
+  async function tryCache (key, checkUpdateTime = true) {
     const data = cache.get(key)
 
-    if (upd) {
-      const cacheUpd = time[key]
-      const fileUpd = (await stat(path.resolve(root, key.replace(/^\//, '')))).mtime.getTime()
-      if (cacheUpd < fileUpd) return null
+    if (checkUpdateTime) {
+      const cacheUpdateTime = time[key]
+      const fileUpdateTime = (await stat(path.resolve(root, key.replace(/^\//, '')))).mtime.getTime()
+      if (cacheUpdateTime < fileUpdateTime) return null
     }
 
     return data
   }
 
-  function cacheData (key, data, upd) {
+  function cacheData (key, data, updateTime) {
     const old = cache.peek(key)
 
     if (old != data) {
       cache.set(key, data)
-      if (upd) time[key] = upd
+      if (updateTime) time[key] = updateTime
       return true
     } else return false
   }
 
   async function bundleSFC (req) {
-    const { filepath, source, upd } = await readSource(req)
+    const { filepath, source, updateTime } = await readSource(req)
     const descriptorResult = compiler.compileToDescriptor(filepath, source)
-    return { ...vueCompiler.assemble(compiler, filepath, descriptorResult), upd }
+    return { ...vueCompiler.assemble(compiler, filepath, descriptorResult), updateTime }
   }
 
   return async (req, res, next) => {
@@ -68,7 +68,7 @@ const vueMiddleware = (options = defaultOptions) => {
         // Bundle Single-File Component
         const result = await bundleSFC(req)
         out = result.code
-        cacheData(key, out, result.upd)
+        cacheData(key, out, result.updateTime)
       }
 
       send(res, out, 'application/javascript')
@@ -80,7 +80,7 @@ const vueMiddleware = (options = defaultOptions) => {
         // transform import statements
         const result = await readSource(req)
         out = transformModuleImports(result.source)
-        cacheData(key, out, result.upd)
+        cacheData(key, out, result.updateTime)
       }
 
       send(res, out, 'application/javascript')
