@@ -78,7 +78,7 @@ const vueMiddleware = (options = defaultOptions) => {
   }
 
   async function bundleSFC (req) {
-    const { filepath, source } = await readSource(req)
+    const { filepath, source, updateTime } = await readSource(req)
     const descriptorResult = compiler.compileToDescriptor(filepath, source)
     const assembledResult = vueCompiler.assemble(compiler, filepath, {
       ...descriptorResult,
@@ -89,27 +89,18 @@ const vueMiddleware = (options = defaultOptions) => {
   }
 
   return async (req, res, next) => {
-    if (req.path.endsWith('.vue')) {
-      const { filepath, source } = await readSource(req)
-      const descriptorResult = compiler.compileToDescriptor(filepath, source)
-      const assembledResult = vueCompiler.assemble(compiler, filepath, {
-        ...descriptorResult,
-        script: injectSourceMapsToScript(descriptorResult.script),
-        styles: injectSourceMapsToStyles(descriptorResult.styles)
-      })
-      
+    if (req.path.endsWith('.vue')) {      
       const key = parseUrl(req).pathname
       let out = await tryCache(key)
 
       if (!out) {
         // Bundle Single-File Component
         const result = await bundleSFC(req)
-        out = result.code
+        out = result
         cacheData(key, out, result.updateTime)
       }
       
-
-      send(res, out, 'application/javascript')
+      send(res, out.code, 'application/javascript')
     } else if (req.path.endsWith('.js')) {
       const key = parseUrl(req).pathname
       let out = await tryCache(key)
