@@ -61,5 +61,5 @@ npx vue-dev-server
 
 ## TODOs
 
-- Caching
-- Pre-processors
+- [x] Caching
+- [ ] Pre-processors
