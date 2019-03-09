@@ -31,6 +31,32 @@ const vueMiddleware = (options = defaultOptions) => {
     res.end(source)
   }
 
+  function injectSourceMapToBlock (block, lang) {
+    const map = Base64.toBase64(
+      JSON.stringify(block.map)
+    )
+    let mapInject
+
+    switch (lang) {
+      case 'js': mapInject = `//# sourceMappingURL=data:application/json;base64,${map}\n`; break;
+      case 'css': mapInject = `/*# sourceMappingURL=data:application/json;base64,${map}*/\n`; break;
+      default: break;
+    }
+
+    return {
+      ...block,
+      code: mapInject + block.code
+    }
+  }
+
+  function injectSourceMapToScript (script) {
+    return injectSourceMapToBlock(script, 'js')
+  }
+
+  function injectSourceMapsToStyles (styles) {
+    return styles.map(style => injectSourceMapToBlock(style, 'css'))
+  }
+  
   async function tryCache (key, checkUpdateTime = true) {
     const data = cache.get(key)
 
@@ -56,22 +82,27 @@ const vueMiddleware = (options = defaultOptions) => {
   async function bundleSFC (req) {
     const { filepath, source, updateTime } = await readSource(req)
     const descriptorResult = compiler.compileToDescriptor(filepath, source)
-    return { ...vueCompiler.assemble(compiler, filepath, descriptorResult), updateTime }
+    const assembledResult = vueCompiler.assemble(compiler, filepath, {
+      ...descriptorResult,
+      script: injectSourceMapToScript(descriptorResult.script),
+      styles: injectSourceMapsToStyles(descriptorResult.styles)
+    })
+    return { ...assembledResult, updateTime }
   }
 
   return async (req, res, next) => {
-    if (req.path.endsWith('.vue')) {
+    if (req.path.endsWith('.vue')) {      
       const key = parseUrl(req).pathname
       let out = await tryCache(key)
 
       if (!out) {
         // Bundle Single-File Component
         const result = await bundleSFC(req)
-        out = result.code
+        out = result
         cacheData(key, out, result.updateTime)
       }
-
-      send(res, out, 'application/javascript')
+      
+      send(res, out.code, 'application/javascript')
     } else if (req.path.endsWith('.js')) {
       const key = parseUrl(req).pathname
       let out = await tryCache(key)
