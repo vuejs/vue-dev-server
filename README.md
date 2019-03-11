@@ -62,4 +62,5 @@ npx vue-dev-server
 ## TODOs
 
 - [x] Caching
+- [ ] NPM module imports
 - [ ] Pre-processors
